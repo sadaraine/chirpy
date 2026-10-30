@@ -1,0 +1,24 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+)
+
+func main() {
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/", http.FileServer(http.Dir(".")))
+
+	server := &http.Server{
+	       	Addr:    ":8080",
+    		Handler: mux,
+	}
+
+	fmt.Println("Server is listening on :8080...")
+	err := server.ListenAndServe()
+	if err != nil {
+		fmt.Printf("Server failed: %s\n", err)
+	}
+}
