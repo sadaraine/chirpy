@@ -1,32 +1,56 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
-func readinessHandler(w http.ResponseWriter, r *http.Request) {
-    w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-    w.WriteHeader(http.StatusOK)
-    w.Write([]byte("OK"))
+type apiConfig struct {
+     fileserverHits atomic.Int32
 }
 
 func main() {
+     const filepathRoot = "."
+     const port = "8080"
+     stripHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 
-	mux := http.NewServeMux()
+     mux := http.NewServeMux()
+     mux.Handle("/app/", apiCfg.middlewareMetricsInc(stripHandler))
+     mux.HandleFunc("/healthz", handlerReadiness)
+     mux.HandleFunc("/metrics", apiCfg.handlerCount())
+     mux.HandleFunc("/reset", apiCfg.handlerReset())
+     
+     server := &http.Server{
+     	    Addr:    ":" + port,
+    	    Handler: mux,
+	    }
 
-	mux.HandleFunc("/healthz", readinessHandler)
+     log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+     log.Fatal(server.ListenAndServe())	
+}
 
-	mux.Handle("/app/", http.StripPrefix("/app", http.FileServer(http.Dir("."))))
+func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
+     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+          cfg.fileserverHits.Add(1)
+     	  next.ServeHTTP(w,r)
+     })
+}
 
-	server := &http.Server{
-	       	Addr:    ":8080",
-    		Handler: mux,
-	}
+func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
+     w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+     w.WriteHeader(http.StatusOK)
+     w.Write([]byte(fmt.Sprintf("Count Reset")
+     cfg.fileserverHits.Store(0)
+}
 
-	fmt.Println("Server is listening on :8080...")
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Printf("Server failed: %s\n", err)
-	}
+func (cfg *apiConfig) handlerCount(w http.ResponseWriter, r *http.Request) {
+     w.Header().Add("Content-Type", "text/plain; charset=utf-8")
+     w.WriteHeader(http.StatusOK)
+     w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())))
+}
+
+func handlerReadiness(w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("OK"))
 }
