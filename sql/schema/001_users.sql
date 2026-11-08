@@ -1,5 +1,5 @@
 -- +goose UP
-CREATE TABLE users (id UUID, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, email TEXT);
+CREATE TABLE users (id UUID NOT NULL, created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, email TEXT NOT NULL);
 
 -- +goose Down
 DROP TABLE users;
