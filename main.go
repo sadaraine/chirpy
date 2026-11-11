@@ -6,10 +6,8 @@ import (
 	"os"
 	"database/sql"
 	"sync/atomic"
-	"time"
 	"github.com/lpernett/godotenv"
 	"github.com/sadaraine/chirpy/internal/database"
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 )
 
@@ -21,22 +19,19 @@ type apiConfig struct {
      platform		string
 }
 
-type User struct {
-	Id	uuid.UUID	`json:"id"`
-	Created_At	time.Time	`json:"created_at"`
-	Updated_At	time.Time	`json:"updated_at"`
-	Email	string	`json:"email"`
-}
-
 func main() {
      const filepathRoot = "."
      const port = "8080"
 
      godotenv.Load()
      dbURL := os.Getenv("DB_URL")
-     platform := os.Getenv("PLATFORM")
      if dbURL == "" {
 	log.Fatal("DB_URL must be set")
+     }
+
+     platform := os.Getenv("PLATFORM")
+     if platform == "" {
+	log.Fatal("PLATFORM must be set")
      }
 
      dbConn, err := sql.Open("postgres", dbURL)
@@ -57,11 +52,12 @@ func main() {
      mux.Handle("/app/", apiCfg.middlewareMetricsInc(stripHandler))
      mux.HandleFunc("GET /api/healthz", handlerReadiness)
      mux.HandleFunc("GET /admin/metrics", apiCfg.handlerCount)
+     mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
      mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
      mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
      mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
      mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpsGet)
-     mux.HandleFunc("POST /api/users", apiCfg.handlerUsers)
+     mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
      
      server := &http.Server{
      	    Addr:    ":" + port,

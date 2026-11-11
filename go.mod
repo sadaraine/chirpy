@@ -3,8 +3,15 @@ module github.com/sadaraine/chirpy
 go 1.27.1
 
 require (
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/alexedwards/argon2id v1.0.0
+	github.com/google/uuid v1.6.0
+)
+
+require (
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/lib/pq v1.12.3 // indirect
 	github.com/lpernett/godotenv v0.0.0-20230527005122-0de1d4c5ef5e // indirect
+	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 )
